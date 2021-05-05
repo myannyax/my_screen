@@ -19,30 +19,27 @@ Server::Server() {
     CHECK((mqd_t)-1 != internal_mq);
 }
 
-void Server::greetClient(unsigned int sessionId) {
-    constexpr unsigned int size = 1 + sizeof(unsigned int);
-    char buffer[size];
-    buffer[0] = SERVER_HELLO;
-    memcpy(buffer + 1, &sessionId, sizeof(sessionId));
-    CHECK(0 <= mq_send(mq, buffer, size, 0));
+void Server::greetClient(std::string sessionId) {
+    //TODO assert id size
+    sendString(SERVER_HELLO, sessionId, mq);
 }
 
 void Server::sendSTDOUT(const std::string &msg) {
-    sendString(STDOUT, msg);
+    sendString(STDOUT, msg, mq);
 }
 
 void Server::sendSTDERR(const std::string &msg) {
-    sendString(STDERR, msg);
+    sendString(STDERR, msg, mq);
 }
 
-void Server::listSessions(const std::vector<unsigned int> &ids) {
-    unsigned int size = 1 + ids.size() * sizeof (unsigned int);
+void Server::listSessions(const std::vector<std::string> &ids) {
+    unsigned int size = 1 + ids.size();
     char *buffer = new char[size];
     buffer[0] = SESSIONS;
     auto my_buff = buffer + 1;
     for (const auto& id : ids)  {
-        memcpy(my_buff, &id, sizeof(id));
-        my_buff += sizeof (id);
+        memcpy(my_buff, id.c_str(), id.size());
+        my_buff += id.size();
     }
     CHECK(0 <= mq_send(mq, buffer, size, 0));
     delete[] buffer;
@@ -50,6 +47,8 @@ void Server::listSessions(const std::vector<unsigned int> &ids) {
 
 void Server::acceptMessage() {
     char buffer[MAX_SIZE + 1];
+
+    //TODO listen to internal queue
 
     while(true) {
         ssize_t bytes_read;
@@ -59,30 +58,35 @@ void Server::acceptMessage() {
         CHECK(bytes_read >= 0);
 
         buffer[bytes_read] = '\0';
+        std::string id;
         switch(buffer[0]) {
             case NEW_SESSION:
-                //TODO
+                //todo
+                id = logic.createNewSession(std::string(buffer + 1));
+                greetClient(id);
                 break;
             case ATTACH:
-                //TODO
+                logic.attachClientToSession(std::string(buffer + 1));
+                greetClient(id);
+                for (auto& entry: logic.getSessionBuffer(id)) {
+                    if (entry.isErr) {
+                        sendSTDERR(entry.data);
+                    } else {
+                        sendSTDOUT(entry.data);
+                    }
+                }
                 break;
             case STDIN:
-                //TODO
+                logic.receiveSTDIN(std::string(buffer + 1));
                 break;
             case DETACH:
-                //TODO
+                logic.detachClient();
                 break;
             case KILL:
-                //TODO
+                logic.killSession(std::string(buffer + 1));
                 break;
             case LIST:
-                //TODO
-                break;
-            case INTERNAL_STDOUT:
-                //TODO
-                break;
-            case INTERNAL_STDERR:
-                //TODO
+                listSessions(logic.getSessionIds());
                 break;
         }
     }

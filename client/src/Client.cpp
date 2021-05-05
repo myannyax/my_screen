@@ -9,23 +9,18 @@ Client::Client() {
     CHECK((mqd_t)-1 != mq);
 }
 
-void Client::newSession() {
-    constexpr unsigned int size = 1;
-    char buffer[size];
-    buffer[0] = NEW_SESSION;
-    CHECK(0 <= mq_send(mq, buffer, size, 0));
+void Client::newSession(std::string sessionId = "") {
+    //TODO assert id size
+    sendString(NEW_SESSION, sessionId, mq);
 }
 
-void Client::attach(unsigned int sessionId) {
-    constexpr unsigned int size = 1 + sizeof(unsigned int);
-    char buffer[size];
-    buffer[0] = ATTACH;
-    memcpy(buffer + 1, &sessionId, sizeof(sessionId));
-    CHECK(0 <= mq_send(mq, buffer, size, 0));
+void Client::attach(std::string sessionId) {
+    //TODO assert id size
+    sendString(ATTACH, sessionId, mq);
 }
 
 void Client::sendSTDIN(const std::string &msg) {
-    sendString(STDIN, msg);
+    sendString(STDIN, msg, mq);
 }
 
 void Client::detach() {
@@ -35,12 +30,9 @@ void Client::detach() {
     CHECK(0 <= mq_send(mq, buffer, size, 0));
 }
 
-void Client::kill(unsigned int sessionId) {
-    constexpr unsigned int size = 1 + sizeof(unsigned int);
-    char buffer[size];
-    buffer[0] = KILL;
-    memcpy(buffer + 1, &sessionId, sizeof(sessionId));
-    CHECK(0 <= mq_send(mq, buffer, size, 0));
+void Client::kill(std::string sessionId) {
+    //TODO assert id size
+    sendString(KILL, sessionId, mq);
 }
 
 void Client::list() {

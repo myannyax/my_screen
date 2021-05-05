@@ -25,13 +25,13 @@
 class Server {
 public:
     Server();
-    void greetClient(unsigned int sessionId);
+    void greetClient(std::string sessionId);
 
     void sendSTDOUT(const std::string &msg);
 
     void sendSTDERR(const std::string &msg);
 
-    void listSessions(const std::vector<unsigned int>& ids);
+    void listSessions(const std::vector<std::string> &ids);
 
     void acceptMessage();
 

@@ -6,6 +6,8 @@
 #define MY_SCREEN_COMMON_H
 
 #include <string>
+#include <mqueue.h>
+#include <cstring>
 
 //TODO need messages to pass info from server that some sessions have exited
 #define NEW_SESSION 0x00
@@ -31,5 +33,5 @@
         } \
     } while (0)  \
 
-void sendString(char code, const std::string &msg);
+void sendString(char code, const std::string &msg, mqd_t mq);
 #endif //MY_SCREEN_COMMON_H

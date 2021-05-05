@@ -4,7 +4,7 @@
 
 #include "Common.h"
 
-void sendString(char code, const std::string &msg) {
+void sendString(char code, const std::string &msg, mqd_t mq) {
     char buffer[1024];
     buffer[0] = code;
     char* my_buff_ptr = buffer + 1;

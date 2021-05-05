@@ -22,15 +22,15 @@ class Client {
 public:
     Client();
 
-    void newSession();
+    void newSession(std::string sessionId);
 
-    void attach(unsigned int sessionId);
+    void attach(std::string sessionId);
 
     void sendSTDIN(const std::string &msg);
 
     void detach();
 
-    void kill(unsigned int sessionId);
+    void kill(std::string sessionId);
 
     void list();
 
