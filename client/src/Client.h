@@ -16,6 +16,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <vector>
 
 
 class Client {
@@ -34,7 +35,7 @@ public:
 
     void list();
 
-    void acceptMessage();
+    void acceptMessages();
 
     ~Client();
 

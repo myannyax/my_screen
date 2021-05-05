@@ -14,9 +14,9 @@ Server::Server() {
     attr.mq_curmsgs = 0;
 
     mq = mq_open(QUEUE_NAME, O_CREAT | O_RDWR, 0644, &attr);
-    internal_mq = mq_open(INTERNAL_QUEUE_NAME.c_str(), O_CREAT | O_RDWR);
-    CHECK((mqd_t)-1 != mq);
-    CHECK((mqd_t)-1 != internal_mq);
+    internal_mq = mq_open(INTERNAL_QUEUE_NAME, O_CREAT | O_RDWR, 0644, &attr);
+    CHECK((mqd_t) - 1 != mq);
+    CHECK((mqd_t) - 1 != internal_mq);
 }
 
 void Server::greetClient(std::string sessionId) {
@@ -33,42 +33,48 @@ void Server::sendSTDERR(const std::string &msg) {
 }
 
 void Server::listSessions(const std::vector<std::string> &ids) {
-    unsigned int size = 1 + ids.size();
+    unsigned int size = 1 + ids.size() + 1;
+    for (const auto &id : ids) {
+        size += (id.size() + 1);
+    }
     char *buffer = new char[size];
     buffer[0] = SESSIONS;
     auto my_buff = buffer + 1;
-    for (const auto& id : ids)  {
+    for (const auto &id : ids) {
         memcpy(my_buff, id.c_str(), id.size());
         my_buff += id.size();
+        *my_buff = '\0';
+        my_buff++;
     }
+    buffer[size] = '\0';
     CHECK(0 <= mq_send(mq, buffer, size, 0));
     delete[] buffer;
 }
 
-void Server::acceptMessage() {
+void Server::acceptMessages() {
     char buffer[MAX_SIZE + 1];
 
     //TODO listen to internal queue
 
-    while(true) {
+    while (true) {
         ssize_t bytes_read;
-
         /* receive the message */
         bytes_read = mq_receive(mq, buffer, MAX_SIZE, NULL);
         CHECK(bytes_read >= 0);
 
         buffer[bytes_read] = '\0';
         std::string id;
-        switch(buffer[0]) {
+        switch (buffer[0]) {
             case NEW_SESSION:
                 //todo
                 id = logic.createNewSession(std::string(buffer + 1));
+                logic.attachClientToSession(id);
                 greetClient(id);
                 break;
             case ATTACH:
                 logic.attachClientToSession(std::string(buffer + 1));
                 greetClient(id);
-                for (auto& entry: logic.getSessionBuffer(id)) {
+                for (auto &entry: logic.getSessionBuffer(id)) {
                     if (entry.isErr) {
                         sendSTDERR(entry.data);
                     } else {
@@ -93,6 +99,6 @@ void Server::acceptMessage() {
 }
 
 Server::~Server() {
-    CHECK((mqd_t)-1 != mq_close(mq));
-    CHECK((mqd_t)-1 != mq_close(internal_mq));
+    CHECK((mqd_t) - 1 != mq_close(mq));
+    CHECK((mqd_t) - 1 != mq_close(internal_mq));
 }

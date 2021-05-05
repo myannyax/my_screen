@@ -21,4 +21,7 @@ target_compile_features(my_screen_server PRIVATE cxx_std_20)
 TARGET_LINK_LIBRARIES(my_screen_server ${Boost_LIBRARIES} rt)
 
 target_compile_features(my_screen_client PRIVATE cxx_std_20)
-TARGET_LINK_LIBRARIES(my_screen_client ${Boost_LIBRARIES} rt)
+TARGET_LINK_LIBRARIES(my_screen_client ${Boost_LIBRARIES} rt Threads::Threads)
+
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)

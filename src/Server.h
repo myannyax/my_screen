@@ -21,10 +21,12 @@
 #define INTERNAL_STDIN 0x10
 #define INTERNAL_STDOUT 0x11
 #define INTERNAL_STDERR 0x12
+#define INTERNAL_QUEUE_NAME "/internalKek"
 
 class Server {
 public:
     Server();
+
     void greetClient(std::string sessionId);
 
     void sendSTDOUT(const std::string &msg);
@@ -33,7 +35,7 @@ public:
 
     void listSessions(const std::vector<std::string> &ids);
 
-    void acceptMessage();
+    void acceptMessages();
 
     ~Server();
 
@@ -41,7 +43,6 @@ private:
     mqd_t mq;
     ServerLogic logic;
     //this one is for receiving data from children
-    std::string INTERNAL_QUEUE_NAME = "internal_kek";
     mqd_t internal_mq;
 };
 

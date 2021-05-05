@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
 
 struct BuffEntry {
     bool isErr;
@@ -17,13 +18,19 @@ struct BuffEntry {
 class ServerLogic {
 public:
     //todo gen id if empty
-    std::string createNewSession(std::string sessionId);
-    void attachClientToSession(std::string sessionId);
-    std::vector<BuffEntry> getSessionBuffer(std::string sessionId);
+    std::string createNewSession(const std::string& sessionId);
+
+    void attachClientToSession(const std::string& sessionId);
+
+    std::vector<BuffEntry> getSessionBuffer(const std::string& sessionId);
+
     void detachClient();
-    void killSession(std::string sessionId);
+
+    void killSession(const std::string& sessionId);
+
     std::vector<std::string> getSessionIds();
-    void receiveSTDIN(std::string msg);
+
+    void receiveSTDIN(const std::string& msg);
 
 private:
 
