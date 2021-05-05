@@ -18,17 +18,13 @@
 #include <vector>
 
 //pass data to server from it's children
-#define INTERNAL_STDIN 0x03
-#define INTERNAL_STDOUT 0x04
+#define INTERNAL_STDIN 0x10
+#define INTERNAL_STDOUT 0x11
+#define INTERNAL_STDERR 0x12
 
 class Server {
 public:
-    Server() {
-        mq = mq_open(QUEUE_NAME, O_WRONLY);
-        internal_mq = mq_open(INTERNAL_QUEUE_NAME.c_str(), O_WRONLY);
-        CHECK((mqd_t)-1 != mq);
-        CHECK((mqd_t)-1 != internal_mq);
-    }
+    Server();
     void greetClient(unsigned int sessionId);
 
     void sendSTDOUT(const std::string &msg);
@@ -39,10 +35,7 @@ public:
 
     void acceptMessage();
 
-    ~Server() {
-        CHECK((mqd_t)-1 != mq_close(mq));
-    }
-
+    ~Server();
 
 private:
     mqd_t mq;

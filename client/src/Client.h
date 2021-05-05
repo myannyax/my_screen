@@ -20,10 +20,7 @@
 
 class Client {
 public:
-    Client() {
-        mq = mq_open(QUEUE_NAME, O_WRONLY);
-        CHECK((mqd_t)-1 != mq);
-    }
+    Client();
 
     void newSession();
 
@@ -39,9 +36,7 @@ public:
 
     void acceptMessage();
 
-    ~Client() {
-        CHECK((mqd_t)-1 != mq_close(mq));
-    }
+    ~Client();
 
 private:
     mqd_t mq;

@@ -4,6 +4,11 @@
 
 #include "Client.h"
 
+Client::Client() {
+    mq = mq_open(QUEUE_NAME, O_WRONLY);
+    CHECK((mqd_t)-1 != mq);
+}
+
 void Client::newSession() {
     constexpr unsigned int size = 1;
     char buffer[size];
@@ -20,12 +25,7 @@ void Client::attach(unsigned int sessionId) {
 }
 
 void Client::sendSTDIN(const std::string &msg) {
-    unsigned int size = 1 + msg.size();
-    char *buffer = new char[size];
-    buffer[0] = STDIN;
-    memcpy(buffer + 1, msg.c_str(), sizeof(msg.size()));
-    CHECK(0 <= mq_send(mq, buffer, size, 0));
-    delete[] buffer;
+    sendString(STDIN, msg);
 }
 
 void Client::detach() {
@@ -52,4 +52,8 @@ void Client::list() {
 
 void Client::acceptMessage() {
     //TODO
+}
+
+Client::~Client() {
+    CHECK((mqd_t)-1 != mq_close(mq));
 }

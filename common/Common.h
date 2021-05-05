@@ -5,6 +5,8 @@
 #ifndef MY_SCREEN_COMMON_H
 #define MY_SCREEN_COMMON_H
 
+#include <string>
+
 //TODO need messages to pass info from server that some sessions have exited
 #define NEW_SESSION 0x00
 #define ATTACH 0x01
@@ -27,6 +29,7 @@
             perror(#x); \
             exit(-1); \
         } \
-    } while (0) \
+    } while (0)  \
 
+void sendString(char code, const std::string &msg);
 #endif //MY_SCREEN_COMMON_H

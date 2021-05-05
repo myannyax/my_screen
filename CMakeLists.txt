@@ -6,12 +6,14 @@ add_executable(my_screen_server
         src/main.cpp
         src/Server.cpp
         src/ServerLogic.cpp
+        common/Common.cpp
 )
 
 add_executable(my_screen_client
         client/src/main.cpp
         client/src/Client.cpp
         client/src/ClientLogic.cpp
+        common/Common.cpp
 )
 
 target_compile_options(my_screen_server PRIVATE -Wall -Wextra -pedantic)
