@@ -16,5 +16,7 @@ add_executable(my_screen_client
 
 target_compile_options(my_screen_server PRIVATE -Wall -Wextra -pedantic)
 target_compile_features(my_screen_server PRIVATE cxx_std_20)
+TARGET_LINK_LIBRARIES(my_screen_server ${Boost_LIBRARIES} rt)
 
 target_compile_features(my_screen_client PRIVATE cxx_std_20)
+TARGET_LINK_LIBRARIES(my_screen_client ${Boost_LIBRARIES} rt)

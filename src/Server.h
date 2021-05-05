@@ -12,6 +12,10 @@
 #include <sys/fcntl.h>
 #include "../common/Common.h"
 #include "ServerLogic.h"
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+#include <vector>
 
 //pass data to server from it's children
 #define INTERNAL_STDIN 0x03

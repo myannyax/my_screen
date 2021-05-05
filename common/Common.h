@@ -17,7 +17,9 @@
 #define LIST 0x08
 #define SESSIONS 0x09
 #define QUEUE_NAME "kek"
+#define MAX_SIZE 1024
 
+//TODO probably should be replaced by something more flexible
 #define CHECK(x) \
     do { \
         if (!(x)) { \

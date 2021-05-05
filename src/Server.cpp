@@ -3,10 +3,9 @@
 //
 
 #include "Server.h"
-#include "vector"
 
 void Server::greetClient(unsigned int sessionId) {
-    unsigned int size = 1 + sizeof(unsigned int);
+    constexpr unsigned int size = 1 + sizeof(unsigned int);
     char buffer[size];
     buffer[0] = SERVER_HELLO;
     memcpy(buffer + 1, &sessionId, sizeof(sessionId));
@@ -19,6 +18,7 @@ void Server::sendSTDOUT(const std::string &msg) {
     buffer[0] = STDOUT;
     memcpy(buffer + 1, msg.c_str(), sizeof(msg.size()));
     CHECK(0 <= mq_send(mq, buffer, size, 0));
+    delete[] buffer;
 }
 
 void Server::sendSTDERR(const std::string &msg) {
@@ -27,6 +27,7 @@ void Server::sendSTDERR(const std::string &msg) {
     buffer[0] = STDERR;
     memcpy(buffer + 1, msg.c_str(), sizeof(msg.size()));
     CHECK(0 <= mq_send(mq, buffer, size, 0));
+    delete[] buffer;
 }
 
 void Server::listSessions(const std::vector<unsigned int> &ids) {
@@ -39,6 +40,7 @@ void Server::listSessions(const std::vector<unsigned int> &ids) {
         my_buff += sizeof (id);
     }
     CHECK(0 <= mq_send(mq, buffer, size, 0));
+    delete[] buffer;
 }
 
 void Server::acceptMessage() {

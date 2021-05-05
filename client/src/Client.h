@@ -5,10 +5,17 @@
 #ifndef MY_SCREEN_CLIENT_H
 #define MY_SCREEN_CLIENT_H
 
+#include <iostream>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <mqueue.h>
 #include <string>
 #include <sys/fcntl.h>
 #include "../../common/Common.h"
 #include "ClientLogic.h"
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
 
 
 class Client {
