@@ -6,13 +6,13 @@
 
 std::string ServerLogic::createNewSession(const std::string& sessionId) {
     //TODO
-    std::cout << "new session created\n";
+    std::cout << "new session created" << std::endl;
     return "kek";
 }
 
 void ServerLogic::attachClientToSession(const std::string& sessionId) {
     //TODO
-    std::cout << "client attached\n";
+    std::cout << "client attached" << std::endl;
 }
 
 std::vector<BuffEntry> ServerLogic::getSessionBuffer(const std::string& sessionId) {
@@ -31,7 +31,7 @@ std::vector<BuffEntry> ServerLogic::getSessionBuffer(const std::string& sessionI
 
 void ServerLogic::detachClient() {
     //TODO
-    std::cout << "client detached\n";
+    std::cout << "client detached" << std::endl;
 }
 
 void ServerLogic::killSession(const std::string& sessionId) {

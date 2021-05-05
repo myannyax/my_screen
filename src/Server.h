@@ -40,9 +40,10 @@ public:
     ~Server();
 
 private:
-    mqd_t mq;
+    mqd_t mq_to;
+    mqd_t mq_from;
     ServerLogic logic;
-    //this one is for receiving data from children
+    //TODO this one is for receiving data from children, [I think] we need two queues for two directions
     mqd_t internal_mq;
 };
 

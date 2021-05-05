@@ -20,7 +20,8 @@
 #define KILL 0x07
 #define LIST 0x08
 #define SESSIONS 0x09
-#define QUEUE_NAME "/kek"
+#define QUEUE_NAME_SC "/SCkek"
+#define QUEUE_NAME_CS "/CSkek"
 #define MAX_SIZE 1024
 
 //TODO probably should be replaced by something more flexible

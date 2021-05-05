@@ -40,8 +40,8 @@ public:
     ~Client();
 
 private:
-    mqd_t mq;
-    ClientLogic logic;
+    mqd_t mq_to;
+    mqd_t mq_from;
 };
 
 

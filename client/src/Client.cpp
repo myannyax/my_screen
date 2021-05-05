@@ -5,41 +5,43 @@
 #include "Client.h"
 
 Client::Client() {
-    mq = mq_open(QUEUE_NAME, O_RDWR);
-    CHECK((mqd_t) - 1 != mq);
+    mq_to = mq_open(QUEUE_NAME_SC, O_RDONLY);
+    mq_from = mq_open(QUEUE_NAME_CS, O_WRONLY);
+    CHECK((mqd_t) - 1 != mq_to);
+    CHECK((mqd_t) - 1 != mq_from);
 }
 
 void Client::newSession(std::string sessionId = "") {
     //TODO assert id size
-    sendString(NEW_SESSION, sessionId, mq);
+    sendString(NEW_SESSION, sessionId, mq_from);
 }
 
 void Client::attach(std::string sessionId) {
     //TODO assert id size
-    sendString(ATTACH, sessionId, mq);
+    sendString(ATTACH, sessionId, mq_from);
 }
 
 void Client::sendSTDIN(const std::string &msg) {
-    sendString(STDIN, msg, mq);
+    sendString(STDIN, msg, mq_from);
 }
 
 void Client::detach() {
     constexpr unsigned int size = 1;
     char buffer[size];
     buffer[0] = DETACH;
-    CHECK(0 <= mq_send(mq, buffer, size, 0));
+    CHECK(0 <= mq_send(mq_from, buffer, size, 0));
 }
 
 void Client::kill(std::string sessionId) {
     //TODO assert id size
-    sendString(KILL, sessionId, mq);
+    sendString(KILL, sessionId, mq_from);
 }
 
 void Client::list() {
     constexpr unsigned int size = 1;
     char buffer[size];
     buffer[0] = LIST;
-    CHECK(0 <= mq_send(mq, buffer, size, 0));
+    CHECK(0 <= mq_send(mq_from, buffer, size, 0));
 }
 
 void Client::acceptMessages() {
@@ -49,7 +51,7 @@ void Client::acceptMessages() {
         ssize_t bytes_read;
 
         /* receive the message */
-        bytes_read = mq_receive(mq, buffer, MAX_SIZE, NULL);
+        bytes_read = mq_receive(mq_to, buffer, MAX_SIZE, NULL);
         CHECK(bytes_read >= 0);
 
         buffer[bytes_read] = '\0';
@@ -82,5 +84,6 @@ void Client::acceptMessages() {
 }
 
 Client::~Client() {
-    CHECK((mqd_t) - 1 != mq_close(mq));
+    CHECK((mqd_t) - 1 != mq_close(mq_to));
+    CHECK((mqd_t) - 1 != mq_close(mq_from));
 }
