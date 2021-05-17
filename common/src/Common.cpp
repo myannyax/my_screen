@@ -8,6 +8,10 @@
 #include "Common.h"
 
 void sendMessage(const Message& message, mqd_t mq) {
+    if (message.data.empty()) {
+        sendCode(message.code, mq);
+    }
+
     char buffer[MAX_MESSAGE_SIZE];
 
     buffer[0] = message.code;
