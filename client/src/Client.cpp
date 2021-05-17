@@ -2,88 +2,117 @@
 // Created by Maria.Filipanova on 5/5/21.
 //
 
+#include <unistd.h>
+#include <cassert>
+
 #include "Client.h"
 
 Client::Client() {
-    mq_to = mq_open(QUEUE_NAME_SC, O_RDONLY);
-    mq_from = mq_open(QUEUE_NAME_CS, O_WRONLY);
-    CHECK((mqd_t) - 1 != mq_to);
-    CHECK((mqd_t) - 1 != mq_from);
+    serverQueue = getMessageQueue(SERVER_QUEUE, O_WRONLY);
+
+    outputQueueName = processOutputQueueName();
+    outputQueue = createMessageQueue(outputQueueName, O_RDONLY);
 }
 
-void Client::newSession(std::string sessionId = "") {
-    //TODO assert id size
-    sendString(NEW_SESSION, sessionId, mq_from);
+Client::~Client() {
+    closeMessageQueue(serverQueue);
+    if (inputQueue != 0) {
+        closeMessageQueue(inputQueue);
+    }
+    closeMessageQueue(outputQueue);
+    deleteMessageQueue(outputQueueName);
 }
 
-void Client::attach(std::string sessionId) {
-    //TODO assert id size
-    sendString(ATTACH, sessionId, mq_from);
+std::string Client::newSession(const std::string& id) {
+    sendMessage({NEW_SESSION_CODE, outputQueueName + " " + id}, serverQueue);
+
+    Message message = receiveMessage(outputQueue);
+    assert(message.code == SERVER_HELLO_CODE);
+    if (!id.empty()) {
+        assert(id == message.data);
+    }
+
+    return message.data;
 }
 
-void Client::sendSTDIN(const std::string &msg) {
-    sendString(STDIN, msg, mq_from);
+void Client::attach(const std::string& newSessionId) {
+    sessionId = newSessionId;
+    sendMessage({ATTACH_CODE, outputQueueName + " " + sessionId}, serverQueue);
+
+    Message message = receiveMessage(outputQueue);
+    assert(message.code == SERVER_HELLO_CODE);
+    sessionId = message.data;
+
+    inputQueue = getMessageQueue(sessionInputQueueName(sessionId), O_WRONLY);
+}
+
+void Client::sendInput(const std::string &msg) {
+    sendMessage({STDIN_CODE, msg}, inputQueue);
 }
 
 void Client::detach() {
-    constexpr unsigned int size = 1;
-    char buffer[size];
-    buffer[0] = DETACH;
-    CHECK(0 <= mq_send(mq_from, buffer, size, 0));
+    sendCode(DETACH_CODE, inputQueue);
 }
 
-void Client::kill(std::string sessionId) {
-    //TODO assert id size
-    sendString(KILL, sessionId, mq_from);
+void Client::kill(const std::string &sessionId) {
+    sendMessage({KILL_CODE, outputQueueName + " " + sessionId}, serverQueue);
+
+    auto message = receiveMessage(outputQueue);
+    assert(message.code == KILLED_CODE);
+
+    std::cout << "Killed session " << sessionId << std::endl;
 }
 
 void Client::list() {
-    constexpr unsigned int size = 1;
-    char buffer[size];
-    buffer[0] = LIST;
-    CHECK(0 <= mq_send(mq_from, buffer, size, 0));
+    sendMessage({LIST_CODE, outputQueueName}, serverQueue);
+    auto message = receiveMessage(outputQueue);
+    assert(message.code == SESSIONS_CODE);
+    std::cout << message.data;
 }
 
 void Client::acceptMessages() {
-    char buffer[MAX_SIZE + 1];
-
     while (true) {
-        ssize_t bytes_read;
+        Message message = receiveMessage(outputQueue);
 
-        /* receive the message */
-        bytes_read = mq_receive(mq_to, buffer, MAX_SIZE, NULL);
-        CHECK(bytes_read >= 0);
-
-        buffer[bytes_read] = '\0';
-        std::string id;
-        switch (buffer[0]) {
-            case SERVER_HELLO:
-                std::cout << std::string(buffer + 1) << std::endl;
+        switch (message.code) {
+            case STDOUT_CODE:
+                std::cout << message.data;
                 break;
-            case STDOUT:
-                std::cout << std::string(buffer + 1) << std::endl;
-                break;
-            case STDERR:
-                std::cerr << std::string(buffer + 1) << std::endl;
-                break;
-            case SESSIONS:
-                std::vector<std::string> res;
-                char *my_buff_ptr = buffer + 1;
-                while (*my_buff_ptr != '\0') {
-                    auto str = std::string(my_buff_ptr);
-                    my_buff_ptr += (str.size() + 1);
-                    res.emplace_back(str);
-                }
-                for (const auto &kek: res) {
-                    std::cout << kek << " ";
-                }
-                std::cout << std::endl;
+            case DETACHED_CODE:
+            case TERMINATED_CODE:
+                return;
+            default:
                 break;
         }
     }
 }
 
-Client::~Client() {
-    CHECK((mqd_t) - 1 != mq_close(mq_to));
-    CHECK((mqd_t) - 1 != mq_close(mq_from));
+void Client::handleInput() {
+    std::string input;
+    while (true) {
+        std::getline(std::cin, input);
+
+        if (std::cin.eof()) {
+            break;
+        }
+
+        input += '\n';
+        sendInput(input);
+    }
+    detach();
+}
+
+void Client::start() {
+    inputWorker = std::thread{[&]() {
+        handleInput();
+    }};
+
+    outputWorker = std::thread{[&]() {
+        acceptMessages();
+    }};
+}
+
+void Client::wait() {
+    inputWorker.join();
+    outputWorker.join();
 }
