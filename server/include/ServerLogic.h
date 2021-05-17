@@ -39,7 +39,6 @@ public:
 
 private:
     IdContainer sessionIds{"session_"};
-    std::unordered_map<std::string, mqd_t> sessionQueues;
 };
 
 

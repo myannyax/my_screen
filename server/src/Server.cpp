@@ -38,6 +38,7 @@ void Server::killSession(const std::string& sessionId, const std::string& output
     }
     logic.killSession(sessionId);
     sendCode(KILL_CODE, sessionQueues[sessionId]);
+    deleteMessageQueue(sessionInputQueueName(sessionId));
     sessionQueues.erase(sessionId);
 
     sendCode(SUCCESS_CODE, outputQueueName);
@@ -92,7 +93,5 @@ void Server::acceptMessages() {
 }
 
 Server::~Server() {
-    CHECK((mqd_t) - 1 != mq_close(inputQueue));
-    //CHECK((mqd_t) - 1 != mq_close(mq_from));
-    //CHECK((mqd_t) - 1 != mq_close(internal_mq));
+    closeMessageQueue(inputQueue);
 }

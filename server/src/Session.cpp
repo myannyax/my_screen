@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include <iostream>
-#include <sstream>
 #include <utility>
 #include <sys/wait.h>
 
@@ -18,6 +17,8 @@ Session::Session(const std::string& sessionId, const std::string& outputQueueNam
 }
 
 Session::~Session() {
+    closeMessageQueue(inputQueue);
+    closeMessageQueue(outputQueue);
 }
 
 void Session::start() {
