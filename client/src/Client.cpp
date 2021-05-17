@@ -37,13 +37,13 @@ std::string Client::newSession(const std::string& id) {
 
 void Client::attach(const std::string& newSessionId) {
     sessionId = newSessionId;
-    sendMessage({ATTACH_CODE, outputQueueName + " " + sessionId}, serverQueue);
+
+    inputQueue = getMessageQueue(sessionInputQueueName(sessionId), O_WRONLY);
+    sendMessage({ATTACH_CODE, outputQueueName}, inputQueue);
 
     Message message = receiveMessage(outputQueue);
     assert(message.code == SERVER_HELLO_CODE);
-    sessionId = message.data;
-
-    inputQueue = getMessageQueue(sessionInputQueueName(sessionId), O_WRONLY);
+    assert(message.data == sessionId);
 }
 
 void Client::sendInput(const std::string &msg) {

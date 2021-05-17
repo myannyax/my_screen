@@ -26,9 +26,6 @@ public:
     void createNewSession(const std::string& id,
                           const std::string& outputQueueName);
 
-    void attachClientToSession(const std::string& sessionId,
-                               const std::string& outputQueueName);
-
     void listSessions(const std::vector<std::string> &ids, const std::string& outputQueueName);
 
     void killSession(const std::string& sessionId, const std::string& outputQueueName);
@@ -42,6 +39,5 @@ private:
     std::unordered_map<std::string, mqd_t> sessionQueues;
     ServerLogic logic;
 };
-
 
 #endif //MY_SCREEN_SERVER_H

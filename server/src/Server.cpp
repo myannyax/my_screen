@@ -32,11 +32,6 @@ void Server::createNewSession(const std::string& id, const std::string& outputQu
     exit(0);
 }
 
-void Server::attachClientToSession(const std::string& sessionId,
-                           const std::string& outputQueueName) {
-    sendMessage({ATTACH_CODE, outputQueueName}, sessionQueues[sessionId]);
-}
-
 void Server::killSession(const std::string& sessionId, const std::string& outputQueueName) {
     logic.killSession(sessionId);
     sendCode(KILL_CODE, sessionQueues[sessionId]);
@@ -74,17 +69,6 @@ void Server::acceptMessages() {
                     is >> outputQueueName >> id;
 
                     createNewSession(id, outputQueueName);
-                }
-                break;
-            case ATTACH_CODE:
-                std::cout << "attach received" << std::endl;
-                {
-                    std::istringstream is{message.data};
-                    std::string id;
-                    std::string outputQueueName;
-                    is >> outputQueueName >> id;
-
-                    attachClientToSession(id, outputQueueName);
                 }
                 break;
             case KILL_CODE:
