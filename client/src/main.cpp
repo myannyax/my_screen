@@ -1,7 +1,4 @@
 #include <unistd.h>
-#include <thread>
-
-#include <filesystem>
 
 #include "Client.h"
 #include "Common.h"
@@ -24,12 +21,10 @@ int main(int argc, char **argv) {
         std::string sessionId = client.newSession(id);
         client.attach(sessionId);
         client.start();
-        client.wait();
     } else if (command == "attach") {
         std::string sessionId = argv[2];
         client.attach(sessionId);
         client.start();
-        client.wait();
     } else if (command == "kill") {
         std::string sessionId = argv[2];
         client.kill(sessionId);

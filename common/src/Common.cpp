@@ -23,8 +23,20 @@ void sendMessage(const Message& message, mqd_t mq) {
     }
 }
 
+void sendMessage(const Message& message, const std::string& queueName) {
+    auto mq = getMessageQueue(queueName, O_WRONLY);
+    sendMessage(message, mq);
+    closeMessageQueue(mq);
+}
+
 void sendCode(char code, mqd_t mq) {
     CHECK(mq_send(mq, &code, 1, 0) == 0);
+}
+
+void sendCode(char code, const std::string& queueName) {
+    auto mq = getMessageQueue(queueName, O_WRONLY);
+    sendCode(code, mq);
+    closeMessageQueue(mq);
 }
 
 Message receiveMessage(mqd_t mq) {

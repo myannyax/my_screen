@@ -22,7 +22,8 @@
 #define SESSIONS_CODE 0x09
 #define DETACHED_CODE 0x0A
 #define TERMINATED_CODE 0x0B
-#define KILLED_CODE 0x0C
+#define SUCCESS_CODE 0x0C
+#define FAILURE_CODE 0x0D
 
 #define SERVER_QUEUE "/serverQueue"
 
@@ -52,7 +53,9 @@ struct PipeEnds {
 };
 
 void sendMessage(const Message& message, mqd_t mq);
+void sendMessage(const Message& message, const std::string& queueName);
 void sendCode(char code, mqd_t mq);
+void sendCode(char code, const std::string& queueName);
 Message receiveMessage(mqd_t mq);
 
 mqd_t createMessageQueue(const std::string& name, int mode);

@@ -29,7 +29,9 @@ public:
 
     bool processOutput();
 
-    void terminateSession();
+    void killSession();
+
+    void endSession(int status);
 
     void acceptMessages();
 
@@ -49,9 +51,10 @@ private:
     PipeEnds stdinEnds{};
     PipeEnds stdoutEnds{};
 
-    std::thread shellWorker;
     std::thread inputWorker;
     std::thread outputWorker;
+
+    pid_t shellPid;
 };
 
 #endif //MY_SCREEN_SESSION_H

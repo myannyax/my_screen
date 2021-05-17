@@ -29,8 +29,7 @@ private:
     mqd_t inputQueue = 0;
     mqd_t outputQueue;
 
-    std::thread inputWorker;
-    std::thread outputWorker;
+    pid_t inputPid = 0;
 
 public:
     Client();
@@ -54,8 +53,6 @@ public:
     void handleInput();
 
     void start();
-
-    void wait();
 };
 
 

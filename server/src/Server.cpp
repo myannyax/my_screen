@@ -28,18 +28,19 @@ void Server::createNewSession(const std::string& id, const std::string& outputQu
     session.start();
 
     session.wait();
-
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
 
 void Server::killSession(const std::string& sessionId, const std::string& outputQueueName) {
+    if (!sessionQueues.contains(sessionId)) {
+        sendMessage({FAILURE_CODE, "No session with id=" + sessionId}, outputQueueName);
+        return;
+    }
     logic.killSession(sessionId);
     sendCode(KILL_CODE, sessionQueues[sessionId]);
     sessionQueues.erase(sessionId);
 
-    auto outputQueue = getMessageQueue(outputQueueName, O_WRONLY);
-    sendCode(KILLED_CODE, outputQueue);
-    closeMessageQueue(outputQueue);
+    sendCode(SUCCESS_CODE, outputQueueName);
 }
 
 void Server::listSessions(const std::vector<std::string> &ids, const std::string& outputQueueName) {
@@ -49,10 +50,7 @@ void Server::listSessions(const std::vector<std::string> &ids, const std::string
         result += id;
         result += '\n';
     }
-
-    auto outputQueue = getMessageQueue(outputQueueName, O_WRONLY);
-    sendMessage({SESSIONS_CODE, result}, outputQueue);
-    closeMessageQueue(outputQueue);
+    sendMessage({SESSIONS_CODE, result}, outputQueueName);
 }
 
 void Server::acceptMessages() {

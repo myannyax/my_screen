@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include <cassert>
+#include <csignal>
 
 #include "Client.h"
 
@@ -15,12 +16,15 @@ Client::Client() {
 }
 
 Client::~Client() {
-    closeMessageQueue(serverQueue);
-    if (inputQueue != 0) {
-        closeMessageQueue(inputQueue);
+    // do not destroy anything in forked process
+    if (inputPid != 0) {
+        closeMessageQueue(serverQueue);
+        if (inputQueue != 0) {
+            closeMessageQueue(inputQueue);
+        }
+        closeMessageQueue(outputQueue);
+        deleteMessageQueue(outputQueueName);
     }
-    closeMessageQueue(outputQueue);
-    deleteMessageQueue(outputQueueName);
 }
 
 std::string Client::newSession(const std::string& id) {
@@ -58,9 +62,12 @@ void Client::kill(const std::string &sessionId) {
     sendMessage({KILL_CODE, outputQueueName + " " + sessionId}, serverQueue);
 
     auto message = receiveMessage(outputQueue);
-    assert(message.code == KILLED_CODE);
-
-    std::cout << "Killed session " << sessionId << std::endl;
+    assert(message.code == SUCCESS_CODE || message.code == FAILURE_CODE);
+    if (message.code == SUCCESS_CODE) {
+        std::cout << "Killed session " << sessionId << std::endl;
+    } else {
+        std::cout << message.data << std::endl;
+    }
 }
 
 void Client::list() {
@@ -77,9 +84,13 @@ void Client::acceptMessages() {
         switch (message.code) {
             case STDOUT_CODE:
                 std::cout << message.data;
+                std::flush(std::cout);
                 break;
             case DETACHED_CODE:
+                return;
             case TERMINATED_CODE:
+                std::cout << message.data << std::endl;
+                ::kill(inputPid, SIGINT);
                 return;
             default:
                 break;
@@ -103,16 +114,11 @@ void Client::handleInput() {
 }
 
 void Client::start() {
-    inputWorker = std::thread{[&]() {
+    auto child = fork();
+    if (child == 0) {
         handleInput();
-    }};
-
-    outputWorker = std::thread{[&]() {
-        acceptMessages();
-    }};
-}
-
-void Client::wait() {
-    inputWorker.join();
-    outputWorker.join();
+        return;
+    }
+    inputPid = child;
+    acceptMessages();
 }

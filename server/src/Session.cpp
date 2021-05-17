@@ -2,34 +2,41 @@
 #include <iostream>
 #include <sstream>
 #include <utility>
+#include <sys/wait.h>
 
 #include "Common.h"
 #include "Session.h"
 
 Session::Session(const std::string& sessionId, const std::string& outputQueueName) : sessionId(sessionId) {
     inputQueueName = sessionInputQueueName(sessionId);
-    inputQueue = getMessageQueue(inputQueueName, O_RDONLY);
+    inputQueue = getMessageQueue(inputQueueName, O_RDWR);
 
     outputQueue = getMessageQueue(outputQueueName, O_WRONLY);
 
     CHECK(pipe2(reinterpret_cast<int(&)[2]>(stdinEnds), O_CLOEXEC) == 0);
     CHECK(pipe2(reinterpret_cast<int(&)[2]>(stdoutEnds), O_CLOEXEC) == 0);
-    dup2(stdinEnds.readEnd, STDIN_FILENO);
-    dup2(stdoutEnds.writeEnd, STDOUT_FILENO);
-    dup2(stdoutEnds.writeEnd, STDERR_FILENO);
 }
 
 Session::~Session() {
 }
 
 void Session::start() {
-    shellWorker = std::thread{[]() {
-        try {
-            std::system("bash");
-        } catch (const std::exception& e) {
-            // TODO
-        }
-    }};
+    auto child = fork();
+    if (child == 0) {
+        dup2(stdinEnds.readEnd, STDIN_FILENO);
+        dup2(stdoutEnds.writeEnd, STDOUT_FILENO);
+        dup2(stdoutEnds.writeEnd, STDERR_FILENO);
+
+        char bash[] = "/bin/bash";
+        char *argv[] = {bash, nullptr};
+        char *envp[] = {nullptr};
+
+        execve(bash, argv, envp);
+        perror("execve");
+        exit(EXIT_FAILURE);
+    }
+
+    shellPid = child;
 
     inputWorker = std::thread{[&]() {
         acceptMessages();
@@ -37,15 +44,19 @@ void Session::start() {
 
     outputWorker = std::thread{[&]() {
         while (processOutput()) {}
-
-        terminateSession();
+        std::cout << "session " << sessionId << ": stop processing output" << std::endl;
+        CHECK(close(stdoutEnds.readEnd) == 0);
     }};
 }
 
 void Session::wait() {
+    int status;
+    CHECK(waitpid(shellPid, &status, 0) == shellPid);
+
+    endSession(status);
+
     inputWorker.join();
     outputWorker.join();
-    shellWorker.join();
 }
 
 void Session::attachClient(const std::string& outputQueueName) {
@@ -82,7 +93,6 @@ bool Session::processOutput() {
 
     ssize_t bytes_read = read(stdoutEnds.readEnd, buffer, MAX_MESSAGE_SIZE);
     if (bytes_read <= 0) {
-        std::cerr << "AAAAAAABBBB" << std::endl;
         return false;
     }
 
@@ -98,14 +108,29 @@ bool Session::processOutput() {
     return true;
 }
 
-void Session::terminateSession() {
+void Session::killSession() {
+    kill(shellPid, SIGKILL);
+}
+
+void Session::endSession(int status) {
+    CHECK(close(stdoutEnds.writeEnd) == 0);
+    CHECK(close(stdinEnds.readEnd) == 0);
+
+    sendCode(TERMINATED_CODE, inputQueue);
+
     activeSessionMutex.lock();
     if (activeSession) {
-        sendCode(TERMINATED_CODE, outputQueue);
+        std::string message;
+        if (WIFEXITED(status)) {
+            message = "Session " + sessionId + " exited with code " + std::to_string(WEXITSTATUS(status));
+        } else if (WIFSIGNALED(status)) {
+            message = "Session " + sessionId + " terminated by signal " + std::to_string(WTERMSIG(status));
+        } else if (WCOREDUMP(status)) {
+            message = "Session " + sessionId + " aborted: core dumped";
+        }
+        sendMessage({TERMINATED_CODE, message}, outputQueue);
     }
     activeSessionMutex.unlock();
-
-    // TODO
 }
 
 void Session::acceptMessages() {
@@ -114,16 +139,28 @@ void Session::acceptMessages() {
 
         switch (message.code) {
             case ATTACH_CODE:
+                std::cout << "session " << sessionId << ": attach received" << std::endl;
                 attachClient(message.data);
                 break;
             case STDIN_CODE:
+                std::cout << "session " << sessionId << ": stdin received" << std::endl;
                 receiveInput(message.data);
                 break;
             case DETACH_CODE:
+                std::cout << "session " << sessionId << ": detach received" << std::endl;
                 detachClient();
                 break;
             case KILL_CODE:
-                terminateSession();
+                std::cout << "session " << sessionId << ": kill received" << std::endl;
+                killSession();
+
+                std::cout << "session " << sessionId << ": stop processing input" << std::endl;
+                CHECK(close(stdinEnds.writeEnd) == 0);
+                return;
+            case TERMINATED_CODE:
+                std::cout << "session " << sessionId << ": terminated" << std::endl;
+                std::cout << "session " << sessionId << ": stop processing input" << std::endl;
+                CHECK(close(stdinEnds.writeEnd) == 0);
                 return;
             default:
                 break;
