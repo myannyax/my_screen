@@ -1,5 +1,6 @@
 #include <sstream>
-#include <Common.h>
+
+#include "Common.h"
 #include "SessionLogic.h"
 
 std::vector<std::string> SessionLogic::getSessionBuffer() {

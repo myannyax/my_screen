@@ -1,7 +1,3 @@
-//
-// Created by Maria.Filipanova on 5/5/21.
-//
-
 #ifndef MY_SCREEN_SERVERLOGIC_H
 #define MY_SCREEN_SERVERLOGIC_H
 
@@ -40,6 +36,5 @@ public:
 private:
     IdContainer sessionIds{"session_"};
 };
-
 
 #endif //MY_SCREEN_SERVERLOGIC_H

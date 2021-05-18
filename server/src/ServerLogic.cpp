@@ -1,28 +1,15 @@
-//
-// Created by Maria.Filipanova on 5/5/21.
-//
-
 #include "ServerLogic.h"
 
 std::string ServerLogic::createNewSession(std::string sessionId) {
     if (sessionId.empty()) {
         sessionId = sessionIds.generateId();
     } else {
-        if (!sessionIds.insert(sessionId)) {
-            exit(1); // TODO
-        }
+        sessionIds.insert(sessionId);
     }
 
     std::cout << "new session created" << std::endl;
     return sessionId;
 }
-
-/*
-void ServerLogic::detachClient(const std::string& sessionId) {
-    //TODO
-    std::cout << "client detached" << std::endl;
-}
-*/
 
 void ServerLogic::killSession(const std::string& sessionId) {
     sessionIds.remove(sessionId);

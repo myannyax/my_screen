@@ -1,7 +1,3 @@
-//
-// Created by Maria.Filipanova on 5/5/21.
-//
-
 #ifndef MY_SCREEN_COMMON_H
 #define MY_SCREEN_COMMON_H
 

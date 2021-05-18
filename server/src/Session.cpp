@@ -109,7 +109,7 @@ bool Session::processOutput() {
     return true;
 }
 
-void Session::killSession() {
+void Session::killSession() const {
     kill(shellPid, SIGKILL);
 }
 

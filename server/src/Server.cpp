@@ -1,7 +1,3 @@
-//
-// Created by Maria.Filipanova on 5/5/21.
-//
-
 #include <sstream>
 #include <unistd.h>
 #include <regex>
@@ -100,6 +96,7 @@ void Server::acceptMessages() {
                 attachClientToSession(id, outputQueueName);
                 break;
             case KILL_CODE:
+                std::cout << "kill received" << std::endl;
                 parseMessage(message.data, id, outputQueueName);
                 killSession(id, outputQueueName);
                 break;

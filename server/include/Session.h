@@ -29,7 +29,7 @@ public:
 
     bool processOutput();
 
-    void killSession();
+    void killSession() const;
 
     void endSession(int status);
 
@@ -54,7 +54,7 @@ private:
     std::thread inputWorker;
     std::thread outputWorker;
 
-    pid_t shellPid;
+    pid_t shellPid = 0;
 };
 
 #endif //MY_SCREEN_SESSION_H

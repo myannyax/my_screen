@@ -1,7 +1,3 @@
-//
-// Created by Maria.Filipanova on 5/5/21.
-//
-
 #ifndef MY_SCREEN_SERVER_H
 #define MY_SCREEN_SERVER_H
 
@@ -9,7 +5,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <mqueue.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
