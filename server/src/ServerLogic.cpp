@@ -7,7 +7,7 @@ std::string ServerLogic::createNewSession(std::string sessionId) {
         sessionIds.insert(sessionId);
     }
 
-    std::cout << "new session created" << std::endl;
+    // std::cout << "new session created" << std::endl;
     return sessionId;
 }
 

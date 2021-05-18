@@ -7,16 +7,6 @@
 
 Client::Client() {
     serverQueue = getMessageQueue(SERVER_QUEUE, O_WRONLY, false);
-    if (serverQueue == static_cast<mqd_t>(-1)) {
-        Server::spawn();
-        int duration = 1000;
-        while (true) {
-            serverQueue = getMessageQueue(SERVER_QUEUE, O_WRONLY, false);
-            if (serverQueue != static_cast<mqd_t>(-1)) break;
-            usleep(duration);
-            duration *= 2;
-        }
-    }
 
     outputQueueName = processOutputQueueName();
     outputQueue = createMessageQueue(outputQueueName, O_RDONLY);
@@ -24,8 +14,10 @@ Client::Client() {
 
 Client::~Client() {
     // do not destroy anything in forked process
-    if (inputPid != 0) {
-        closeMessageQueue(serverQueue);
+    if (!doNotDestroy) {
+        if (serverExists()) {
+            closeMessageQueue(serverQueue);
+        }
         if (inputQueue != 0) {
             closeMessageQueue(inputQueue);
         }
@@ -35,39 +27,45 @@ Client::~Client() {
 }
 
 std::string Client::newSession(const std::string& id) {
+    spawnServer();
+
     sendMessage({NEW_SESSION_CODE, outputQueueName + " " + id}, serverQueue);
 
     Message message = receiveMessage(outputQueue);
     assert(message.code == SERVER_HELLO_CODE || message.code == FAILURE_CODE);
-    if (message.code == SERVER_HELLO_CODE) {
-        if (!id.empty()) {
-            assert(id == message.data);
-        }
-        return message.data;
-    } else {
+
+    if (message.code == FAILURE_CODE) {
         std::cout << message.data << std::endl;
-        exit(EXIT_FAILURE);
+        return "";
     }
+    if (!id.empty()) {
+        assert(id == message.data);
+    }
+    return message.data;
 }
 
-void Client::attach(const std::string& newSessionId) {
-    sendMessage({ATTACH_CODE, outputQueueName + " " + newSessionId}, serverQueue);
+bool Client::attach(const std::string& id) {
+    if (!serverExists()) {
+        std::cout << "Session " << id << " does not exist" << std::endl;
+        return false;
+    }
+
+    sendMessage({ATTACH_CODE, outputQueueName + " " + id}, serverQueue);
 
     Message message = receiveMessage(outputQueue);
     assert(message.code == SERVER_HELLO_CODE || message.code == FAILURE_CODE);
-    if (message.code == SERVER_HELLO_CODE) {
-        std::cout << "[" << newSessionId << "]" << std::endl;
-        sessionId = newSessionId;
-        assert(message.data == sessionId);
-        inputQueue = getMessageQueue(sessionInputQueueName(sessionId), O_WRONLY);
-    } else {
-        std::cout << message.data << std::endl;
-        exit(EXIT_FAILURE);
-    }
-}
 
-void Client::sendInput(const std::string &msg) const {
-    sendMessage({STDIN_CODE, msg}, inputQueue);
+    if (message.code == FAILURE_CODE) {
+        std::cout << message.data << std::endl;
+        return false;
+    }
+
+    std::cout << "[" << id << "]" << std::endl;
+    sessionId = id;
+    assert(message.data == sessionId);
+    inputQueue = getMessageQueue(sessionInputQueueName(sessionId), O_WRONLY);
+
+    return true;
 }
 
 void Client::detach() const {
@@ -75,6 +73,11 @@ void Client::detach() const {
 }
 
 void Client::kill(const std::string& id) {
+    if (!serverExists()) {
+        std::cout << "Session " << id << " does not exist" << std::endl;
+        return;
+    }
+
     sendMessage({KILL_CODE, outputQueueName + " " + id}, serverQueue);
 
     auto message = receiveMessage(outputQueue);
@@ -87,6 +90,10 @@ void Client::kill(const std::string& id) {
 }
 
 void Client::list() {
+    if (!serverExists()) {
+        return;
+    }
+
     sendMessage({LIST_CODE, outputQueueName}, serverQueue);
     auto message = receiveMessage(outputQueue);
     assert(message.code == SESSIONS_CODE);
@@ -95,6 +102,21 @@ void Client::list() {
 
 void Client::shutdown() {
     sendMessage({SHUTDOWN_CODE, outputQueueName}, serverQueue);
+}
+
+void Client::start() {
+    auto child = fork();
+    if (child == 0) {
+        doNotDestroy = true;
+        handleInput();
+        return;
+    }
+    inputPid = child;
+    acceptMessages();
+}
+
+void Client::sendInput(const std::string &msg) const {
+    sendMessage({STDIN_CODE, msg}, inputQueue);
 }
 
 void Client::acceptMessages() const {
@@ -133,12 +155,20 @@ void Client::handleInput() const {
     detach();
 }
 
-void Client::start() {
-    auto child = fork();
-    if (child == 0) {
-        handleInput();
-        return;
+bool Client::serverExists() const {
+    return serverQueue != static_cast<mqd_t>(-1);
+}
+
+void Client::spawnServer() {
+    if (!serverExists()) {
+        Server::spawn();
+        int duration = 1000;
+        while (true) {
+            serverQueue = getMessageQueue(SERVER_QUEUE, O_WRONLY, false);
+            if (serverExists())
+                break;
+            usleep(duration);
+            duration *= 2;
+        }
     }
-    inputPid = child;
-    acceptMessages();
 }

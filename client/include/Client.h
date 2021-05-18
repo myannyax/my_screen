@@ -26,6 +26,7 @@ private:
     mqd_t outputQueue;
 
     pid_t inputPid = 0;
+    bool doNotDestroy = false;
 
 public:
     Client();
@@ -34,9 +35,7 @@ public:
 
     std::string newSession(const std::string& id = "");
 
-    void attach(const std::string& newSessionId);
-
-    void sendInput(const std::string &msg) const;
+    bool attach(const std::string& id);
 
     void detach() const;
 
@@ -46,11 +45,18 @@ public:
 
     void shutdown();
 
+    void start();
+
+private:
+    void sendInput(const std::string &msg) const;
+
     void acceptMessages() const;
 
     void handleInput() const;
 
-    void start();
+    [[nodiscard]] bool serverExists() const;
+
+    void spawnServer();
 };
 
 #endif //MY_SCREEN_CLIENT_H

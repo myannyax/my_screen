@@ -28,6 +28,8 @@ void Server::spawn() {
 
         Server server;
         server.acceptMessages();
+        server.~Server();
+        exit(0);
     }
 }
 
@@ -123,6 +125,9 @@ void Server::acceptMessages() {
             case TERMINATED_CODE:
                 // std::cout << "terminated received" << std::endl;
                 endSession(message.data);
+                if (sessionQueues.empty()) {
+                    return;
+                }
                 break;
             case SHUTDOWN_CODE:
                 // std::cout << "shutdown received" << std::endl;
@@ -140,6 +145,11 @@ Server::~Server() {
 
     for (const auto& id : logic.getSessionIds()) {
         killSession(id, tmpOutputQueueName);
+
+        auto message = receiveMessage(tmpOutputQueue);
+        CHECK(message.code == SUCCESS_CODE);
+        message = receiveMessage(inputQueue);
+        CHECK(message.code == TERMINATED_CODE);
     }
 
     closeMessageQueue(tmpOutputQueue);

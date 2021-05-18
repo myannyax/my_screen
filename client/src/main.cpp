@@ -19,12 +19,14 @@ int main(int argc, char **argv) {
             id = argv[2];
         }
         std::string sessionId = client.newSession(id);
-        client.attach(sessionId);
-        client.start();
+        if (!sessionId.empty() && client.attach(sessionId)) {
+            client.start();
+        }
     } else if (command == "attach") {
         std::string sessionId = argv[2];
-        client.attach(sessionId);
-        client.start();
+        if (client.attach(sessionId)) {
+            client.start();
+        }
     } else if (command == "kill") {
         std::string sessionId = argv[2];
         client.kill(sessionId);
