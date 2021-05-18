@@ -4,14 +4,16 @@
 
 #include <sstream>
 #include <unistd.h>
-#include <Session.h>
+#include <regex>
 
 #include "Server.h"
+#include "Session.h"
 
 namespace {
     void parseMessage(const std::string& data, std::string& sessionId, std::string& outputQueueName) {
         std::istringstream is{data};
-        is >> outputQueueName >> sessionId;
+        is >> outputQueueName;
+        std::getline(is >> std::ws, sessionId, {});
     }
 }
 
@@ -22,6 +24,10 @@ Server::Server() {
 void Server::createNewSession(const std::string& id, const std::string& outputQueueName) {
     if (sessionQueues.contains(id)) {
         sendMessage({FAILURE_CODE, "Session " + id + " already exists"}, outputQueueName);
+        return;
+    }
+    if (!std::regex_match(id, std::regex{SESSION_ID_FORMAT})) {
+        sendMessage({FAILURE_CODE, "Incorrect session id: " + id}, outputQueueName);
         return;
     }
 

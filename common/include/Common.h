@@ -31,6 +31,8 @@
 
 #define MAX_SESSION_LINES 15
 
+#define SESSION_ID_FORMAT "[A-Za-z0-9_]{0,15}"
+
 //TODO probably should be replaced by something more flexible
 #define CHECK(x) \
     do { \
