@@ -20,6 +20,8 @@ void Server::spawn() {
     CHECK(spawner >= 0);
 
     if (spawner == 0) {
+        dup2(-1, STDIN_FILENO);
+
         auto daemon = fork();
         CHECK(daemon >= 0);
         if (daemon > 0) {
