@@ -1,15 +1,22 @@
-//
-// Created by Maria.Filipanova on 5/5/21.
-//
-
 #include <unistd.h>
 #include <cassert>
 #include <csignal>
 
 #include "Client.h"
+#include "Server.h"
 
 Client::Client() {
-    serverQueue = getMessageQueue(SERVER_QUEUE, O_WRONLY);
+    serverQueue = getMessageQueue(SERVER_QUEUE, O_WRONLY, false);
+    if (serverQueue == static_cast<mqd_t>(-1)) {
+        Server::spawn();
+        int duration = 1000;
+        while (true) {
+            serverQueue = getMessageQueue(SERVER_QUEUE, O_WRONLY, false);
+            if (serverQueue != static_cast<mqd_t>(-1)) break;
+            usleep(duration);
+            duration *= 2;
+        }
+    }
 
     outputQueueName = processOutputQueueName();
     outputQueue = createMessageQueue(outputQueueName, O_RDONLY);

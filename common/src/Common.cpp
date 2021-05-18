@@ -65,9 +65,11 @@ mqd_t createMessageQueue(const std::string& name, int mode) {
     return mq;
 }
 
-mqd_t getMessageQueue(const std::string& name, int mode) {
+mqd_t getMessageQueue(const std::string& name, int mode, bool checkExists) {
     auto mq = mq_open(name.c_str(), mode);
-    CHECK(mq != static_cast<mqd_t>(-1));
+    if (checkExists) {
+        CHECK(mq != static_cast<mqd_t>(-1));
+    }
 
     return mq;
 }
@@ -81,9 +83,9 @@ void deleteMessageQueue(const std::string& queueName) {
 }
 
 std::string sessionInputQueueName(const std::string& sessionId) {
-    return "/in_" + sessionId;
+    return "/my_screen_in_" + sessionId;
 }
 
 std::string processOutputQueueName() {
-    return "/out_" + std::to_string(getpid());
+    return "/my_screen_out_" + std::to_string(getpid());
 }
