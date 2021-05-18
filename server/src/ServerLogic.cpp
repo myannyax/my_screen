@@ -11,7 +11,7 @@ std::string ServerLogic::createNewSession(std::string sessionId) {
     return sessionId;
 }
 
-void ServerLogic::killSession(const std::string& sessionId) {
+void ServerLogic::endSession(const std::string& sessionId) {
     sessionIds.remove(sessionId);
 }
 

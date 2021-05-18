@@ -29,6 +29,8 @@ public:
 
     void killSession(const std::string& sessionId, const std::string& outputQueueName);
 
+    void endSession(const std::string& sessionId);
+
     void acceptMessages();
 
     ~Server();

@@ -59,12 +59,14 @@ void Server::killSession(const std::string& sessionId, const std::string& output
         sendMessage({FAILURE_CODE, "Session " + sessionId + " does not exist"}, outputQueueName);
         return;
     }
-    logic.killSession(sessionId);
     sendCode(KILL_CODE, sessionQueues[sessionId]);
+    sendCode(SUCCESS_CODE, outputQueueName);
+}
+
+void Server::endSession(const std::string& sessionId) {
+    logic.endSession(sessionId);
     deleteMessageQueue(sessionInputQueueName(sessionId));
     sessionQueues.erase(sessionId);
-
-    sendCode(SUCCESS_CODE, outputQueueName);
 }
 
 void Server::listSessions(const std::vector<std::string> &ids, const std::string& outputQueueName) {
@@ -103,6 +105,10 @@ void Server::acceptMessages() {
             case LIST_CODE:
                 std::cout << "list received" << std::endl;
                 listSessions(logic.getSessionIds(), message.data);
+                break;
+            case TERMINATED_CODE:
+                std::cout << "terminated received" << std::endl;
+                endSession(message.data);
                 break;
             case SHUTDOWN_CODE:
                 std::cout << "shutdown received" << std::endl;

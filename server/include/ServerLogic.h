@@ -29,7 +29,7 @@ private:
 public:
     std::string createNewSession(std::string sessionId = "");
 
-    void killSession(const std::string& sessionId);
+    void endSession(const std::string& sessionId);
 
     std::vector<std::string> getSessionIds();
 

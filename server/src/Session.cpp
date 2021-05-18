@@ -121,6 +121,7 @@ void Session::endSession(int status) {
     CHECK(close(amaster) == 0);
 
     sendCode(TERMINATED_CODE, inputQueue);
+    sendMessage({TERMINATED_CODE, sessionId}, SERVER_QUEUE);
 
     activeSessionMutex.lock();
     if (activeSession) {
