@@ -49,6 +49,7 @@ void Client::attach(const std::string& newSessionId) {
     Message message = receiveMessage(outputQueue);
     assert(message.code == SERVER_HELLO_CODE || message.code == FAILURE_CODE);
     if (message.code == SERVER_HELLO_CODE) {
+        std::cout << "[" << newSessionId << "]" << std::endl;
         sessionId = newSessionId;
         assert(message.data == sessionId);
         inputQueue = getMessageQueue(sessionInputQueueName(sessionId), O_WRONLY);
