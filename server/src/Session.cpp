@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include <iostream>
 #include <utility>
 #include <sys/wait.h>
 #include <pty.h>
@@ -50,7 +49,7 @@ void Session::start() {
 
     outputWorker = std::thread{[&]() {
         while (processOutput()) {}
-        std::cout << "session " << sessionId << ": stop processing output" << std::endl;
+        // std::cout << "session " << sessionId << ": stop processing output" << std::endl;
     }};
 }
 
@@ -144,26 +143,26 @@ void Session::acceptMessages() {
 
         switch (message.code) {
             case ATTACH_CODE:
-                std::cout << "session " << sessionId << ": attach received" << std::endl;
+                // std::cout << "session " << sessionId << ": attach received" << std::endl;
                 attachClient(message.data);
                 break;
             case STDIN_CODE:
-                std::cout << "session " << sessionId << ": stdin received" << std::endl;
+                // std::cout << "session " << sessionId << ": stdin received" << std::endl;
                 receiveInput(message.data);
                 break;
             case DETACH_CODE:
-                std::cout << "session " << sessionId << ": detach received" << std::endl;
+                // std::cout << "session " << sessionId << ": detach received" << std::endl;
                 detachClient();
                 break;
             case KILL_CODE:
-                std::cout << "session " << sessionId << ": kill received" << std::endl;
+                // std::cout << "session " << sessionId << ": kill received" << std::endl;
                 killSession();
 
-                std::cout << "session " << sessionId << ": stop processing input" << std::endl;
+                // std::cout << "session " << sessionId << ": stop processing input" << std::endl;
                 return;
             case TERMINATED_CODE:
-                std::cout << "session " << sessionId << ": terminated" << std::endl;
-                std::cout << "session " << sessionId << ": stop processing input" << std::endl;
+                // std::cout << "session " << sessionId << ": terminated" << std::endl;
+                // std::cout << "session " << sessionId << ": stop processing input" << std::endl;
                 return;
             default:
                 break;

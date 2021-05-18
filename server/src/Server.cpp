@@ -102,33 +102,33 @@ void Server::acceptMessages() {
 
         switch (message.code) {
             case NEW_SESSION_CODE:
-                std::cout << "newSession received" << std::endl;
+                // std::cout << "newSession received" << std::endl;
                 parseMessage(message.data, id, outputQueueName);
                 createNewSession(id, outputQueueName);
                 break;
             case ATTACH_CODE:
-                std::cout << "attach received" << std::endl;
+                // std::cout << "attach received" << std::endl;
                 parseMessage(message.data, id, outputQueueName);
                 attachClientToSession(id, outputQueueName);
                 break;
             case KILL_CODE:
-                std::cout << "kill received" << std::endl;
+                // std::cout << "kill received" << std::endl;
                 parseMessage(message.data, id, outputQueueName);
                 killSession(id, outputQueueName);
                 break;
             case LIST_CODE:
-                std::cout << "list received" << std::endl;
+                // std::cout << "list received" << std::endl;
                 listSessions(logic.getSessionIds(), message.data);
                 break;
             case TERMINATED_CODE:
-                std::cout << "terminated received" << std::endl;
+                // std::cout << "terminated received" << std::endl;
                 endSession(message.data);
                 break;
             case SHUTDOWN_CODE:
-                std::cout << "shutdown received" << std::endl;
+                // std::cout << "shutdown received" << std::endl;
                 return;
             default:
-                std::cout << "unrecognized code: " << message.code << std::endl;
+                // std::cout << "unrecognized code: " << message.code << std::endl;
                 break;
         }
     }
