@@ -7,10 +7,16 @@ int main(int argc, char **argv) {
     Client client;
 
     if (argc < 2) {
-        // TODO usage
-        return -1;
+        std::cout << "Usage:" << std::endl;
+        std::cout << "    " << argv[0] << " list" << std::endl;
+        std::cout << "    " << argv[0] << " new [sessionId]" << std::endl;
+        std::cout << "    " << argv[0] << " attach <sessionId>" << std::endl;
+        std::cout << "    " << argv[0] << " kill <sessionId>" << std::endl;
+        return 1;
     }
+
     std::string command = argv[1];
+
     if (command == "list") {
         client.list();
     } else if (command == "new") {
