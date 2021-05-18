@@ -20,7 +20,7 @@
 #define FAILURE_CODE 0x0D
 #define SHUTDOWN_CODE 0x0E
 
-#define SERVER_QUEUE "/serverQueue"
+#define SERVER_QUEUE "/my_screen_server_queue"
 
 #define MAX_MESSAGE_SIZE 1024
 #define MAX_QUEUE_SIZE 10
@@ -44,11 +44,6 @@ struct Message {
     std::string data;
 };
 
-struct PipeEnds {
-    int readEnd;
-    int writeEnd;
-};
-
 void sendMessage(const Message& message, mqd_t mq);
 void sendMessage(const Message& message, const std::string& queueName);
 void sendCode(char code, mqd_t mq);
@@ -56,7 +51,7 @@ void sendCode(char code, const std::string& queueName);
 Message receiveMessage(mqd_t mq);
 
 mqd_t createMessageQueue(const std::string& name, int mode);
-mqd_t getMessageQueue(const std::string& name, int mode);
+mqd_t getMessageQueue(const std::string& name, int mode, bool checkExists = true);
 void closeMessageQueue(mqd_t mq);
 void deleteMessageQueue(const std::string& queueName);
 

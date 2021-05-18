@@ -19,6 +19,8 @@ class Server {
 public:
     Server();
 
+    static void spawn();
+
     void createNewSession(const std::string& id,
                           const std::string& outputQueueName);
 

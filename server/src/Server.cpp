@@ -5,16 +5,30 @@
 #include "Server.h"
 #include "Session.h"
 
-namespace {
-    void parseMessage(const std::string& data, std::string& sessionId, std::string& outputQueueName) {
-        std::istringstream is{data};
-        is >> outputQueueName;
-        std::getline(is >> std::ws, sessionId, {});
-    }
+void parseMessage(const std::string& data, std::string& sessionId, std::string& outputQueueName) {
+    std::istringstream is{data};
+    is >> outputQueueName;
+    std::getline(is >> std::ws, sessionId, {});
 }
 
 Server::Server() {
     inputQueue = createMessageQueue(SERVER_QUEUE, O_RDONLY);
+}
+
+void Server::spawn() {
+    auto spawner = fork();
+    CHECK(spawner >= 0);
+
+    if (spawner == 0) {
+        auto daemon = fork();
+        CHECK(daemon >= 0);
+        if (daemon > 0) {
+            exit(0);
+        }
+
+        Server server;
+        server.acceptMessages();
+    }
 }
 
 void Server::createNewSession(const std::string& id, const std::string& outputQueueName) {
@@ -121,7 +135,7 @@ void Server::acceptMessages() {
 }
 
 Server::~Server() {
-    std::string tmpOutputQueueName = "/tmpOutputQueue";
+    std::string tmpOutputQueueName = "/my_screen_tmp_output_queue";
     auto tmpOutputQueue = createMessageQueue(tmpOutputQueueName, O_WRONLY);
 
     for (const auto& id : logic.getSessionIds()) {
