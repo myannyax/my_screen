@@ -2,6 +2,7 @@
 #include <iostream>
 #include <utility>
 #include <sys/wait.h>
+#include <pty.h>
 
 #include "Common.h"
 #include "Session.h"
@@ -12,8 +13,7 @@ Session::Session(const std::string& sessionId, const std::string& outputQueueNam
 
     outputQueue = getMessageQueue(outputQueueName, O_WRONLY);
 
-    CHECK(pipe2(reinterpret_cast<int(&)[2]>(stdinEnds), O_CLOEXEC) == 0);
-    CHECK(pipe2(reinterpret_cast<int(&)[2]>(stdoutEnds), O_CLOEXEC) == 0);
+    CHECK(openpty(&amaster, &aslave, nullptr, nullptr, nullptr) >= 0);
 }
 
 Session::~Session() {
@@ -23,20 +23,25 @@ Session::~Session() {
 
 void Session::start() {
     auto child = fork();
+    CHECK(child >= 0);
+
     if (child == 0) {
-        dup2(stdinEnds.readEnd, STDIN_FILENO);
-        dup2(stdoutEnds.writeEnd, STDOUT_FILENO);
-        dup2(stdoutEnds.writeEnd, STDERR_FILENO);
+        CHECK(close(amaster) == 0);
+        dup2(aslave, STDIN_FILENO);
+        dup2(aslave, STDOUT_FILENO);
+        dup2(aslave, STDERR_FILENO);
 
-        char bash[] = "/bin/bash";
-        char *argv[] = {bash, nullptr};
-        char *envp[] = {nullptr};
+        struct termios tp;
+        CHECK(tcgetattr(STDIN_FILENO, &tp) != -1);
+        tp.c_lflag &= ~ECHO;
+        CHECK(tcsetattr(STDIN_FILENO, TCSAFLUSH, &tp) != -1);
 
-        execve(bash, argv, envp);
+        execl("/bin/bash", "/bin/bash", nullptr);
         perror("execve");
         exit(EXIT_FAILURE);
     }
 
+    CHECK(close(aslave) == 0);
     shellPid = child;
 
     inputWorker = std::thread{[&]() {
@@ -46,7 +51,6 @@ void Session::start() {
     outputWorker = std::thread{[&]() {
         while (processOutput()) {}
         std::cout << "session " << sessionId << ": stop processing output" << std::endl;
-        CHECK(close(stdoutEnds.readEnd) == 0);
     }};
 }
 
@@ -86,13 +90,13 @@ void Session::receiveInput(const std::string &msg) {
     logic.receiveInput(msg);
     activeSessionMutex.unlock();
 
-    write(stdinEnds.writeEnd, msg.c_str(), msg.size());
+    write(amaster, msg.data(), msg.size());
 }
 
 bool Session::processOutput() {
     char buffer[MAX_MESSAGE_SIZE];
 
-    ssize_t bytes_read = read(stdoutEnds.readEnd, buffer, MAX_MESSAGE_SIZE);
+    ssize_t bytes_read = read(amaster, buffer, MAX_MESSAGE_SIZE);
     if (bytes_read <= 0) {
         return false;
     }
@@ -114,8 +118,7 @@ void Session::killSession() const {
 }
 
 void Session::endSession(int status) {
-    CHECK(close(stdoutEnds.writeEnd) == 0);
-    CHECK(close(stdinEnds.readEnd) == 0);
+    CHECK(close(amaster) == 0);
 
     sendCode(TERMINATED_CODE, inputQueue);
 
@@ -156,12 +159,10 @@ void Session::acceptMessages() {
                 killSession();
 
                 std::cout << "session " << sessionId << ": stop processing input" << std::endl;
-                CHECK(close(stdinEnds.writeEnd) == 0);
                 return;
             case TERMINATED_CODE:
                 std::cout << "session " << sessionId << ": terminated" << std::endl;
                 std::cout << "session " << sessionId << ": stop processing input" << std::endl;
-                CHECK(close(stdinEnds.writeEnd) == 0);
                 return;
             default:
                 break;

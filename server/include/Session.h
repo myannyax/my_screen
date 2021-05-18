@@ -48,8 +48,7 @@ private:
     mqd_t inputQueue;
     mqd_t outputQueue = 0;
 
-    PipeEnds stdinEnds{};
-    PipeEnds stdoutEnds{};
+    int amaster, aslave;
 
     std::thread inputWorker;
     std::thread outputWorker;
