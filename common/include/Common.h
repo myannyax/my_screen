@@ -9,13 +9,11 @@
 #include <mqueue.h>
 #include <cstring>
 
-//TODO need messages to pass info from server that some sessions have exited
 #define NEW_SESSION_CODE 0x00
 #define ATTACH_CODE 0x01
 #define SERVER_HELLO_CODE 0x02
 #define STDIN_CODE 0x03
 #define STDOUT_CODE 0x04
-#define STDERR_CODE 0x05
 #define DETACH_CODE 0x06
 #define KILL_CODE 0x07
 #define LIST_CODE 0x08
@@ -24,6 +22,7 @@
 #define TERMINATED_CODE 0x0B
 #define SUCCESS_CODE 0x0C
 #define FAILURE_CODE 0x0D
+#define SHUTDOWN_CODE 0x0E
 
 #define SERVER_QUEUE "/serverQueue"
 

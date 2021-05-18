@@ -28,5 +28,7 @@ int main(int argc, char **argv) {
     } else if (command == "kill") {
         std::string sessionId = argv[2];
         client.kill(sessionId);
+    } else if (command == "shutdown") {
+        client.shutdown();
     }
 }

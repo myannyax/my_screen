@@ -31,40 +31,48 @@ std::string Client::newSession(const std::string& id) {
     sendMessage({NEW_SESSION_CODE, outputQueueName + " " + id}, serverQueue);
 
     Message message = receiveMessage(outputQueue);
-    assert(message.code == SERVER_HELLO_CODE);
-    if (!id.empty()) {
-        assert(id == message.data);
+    assert(message.code == SERVER_HELLO_CODE || message.code == FAILURE_CODE);
+    if (message.code == SERVER_HELLO_CODE) {
+        if (!id.empty()) {
+            assert(id == message.data);
+        }
+        return message.data;
+    } else {
+        std::cout << message.data << std::endl;
+        exit(EXIT_FAILURE);
     }
-
-    return message.data;
 }
 
 void Client::attach(const std::string& newSessionId) {
-    sessionId = newSessionId;
-
-    inputQueue = getMessageQueue(sessionInputQueueName(sessionId), O_WRONLY);
-    sendMessage({ATTACH_CODE, outputQueueName}, inputQueue);
+    sendMessage({ATTACH_CODE, outputQueueName + " " + newSessionId}, serverQueue);
 
     Message message = receiveMessage(outputQueue);
-    assert(message.code == SERVER_HELLO_CODE);
-    assert(message.data == sessionId);
+    assert(message.code == SERVER_HELLO_CODE || message.code == FAILURE_CODE);
+    if (message.code == SERVER_HELLO_CODE) {
+        sessionId = newSessionId;
+        assert(message.data == sessionId);
+        inputQueue = getMessageQueue(sessionInputQueueName(sessionId), O_WRONLY);
+    } else {
+        std::cout << message.data << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
-void Client::sendInput(const std::string &msg) {
+void Client::sendInput(const std::string &msg) const {
     sendMessage({STDIN_CODE, msg}, inputQueue);
 }
 
-void Client::detach() {
+void Client::detach() const {
     sendCode(DETACH_CODE, inputQueue);
 }
 
-void Client::kill(const std::string &sessionId) {
-    sendMessage({KILL_CODE, outputQueueName + " " + sessionId}, serverQueue);
+void Client::kill(const std::string& id) {
+    sendMessage({KILL_CODE, outputQueueName + " " + id}, serverQueue);
 
     auto message = receiveMessage(outputQueue);
     assert(message.code == SUCCESS_CODE || message.code == FAILURE_CODE);
     if (message.code == SUCCESS_CODE) {
-        std::cout << "Killed session " << sessionId << std::endl;
+        std::cout << "Killed session " << id << std::endl;
     } else {
         std::cout << message.data << std::endl;
     }
@@ -77,7 +85,11 @@ void Client::list() {
     std::cout << message.data;
 }
 
-void Client::acceptMessages() {
+void Client::shutdown() {
+    sendMessage({SHUTDOWN_CODE, outputQueueName}, serverQueue);
+}
+
+void Client::acceptMessages() const {
     while (true) {
         Message message = receiveMessage(outputQueue);
 
@@ -98,7 +110,7 @@ void Client::acceptMessages() {
     }
 }
 
-void Client::handleInput() {
+void Client::handleInput() const {
     std::string input;
     while (true) {
         std::getline(std::cin, input);

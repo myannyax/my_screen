@@ -40,17 +40,19 @@ public:
 
     void attach(const std::string& newSessionId);
 
-    void sendInput(const std::string &msg);
+    void sendInput(const std::string &msg) const;
 
-    void detach();
+    void detach() const;
 
-    void kill(const std::string &sessionId);
+    void kill(const std::string &id);
 
     void list();
 
-    void acceptMessages();
+    void shutdown();
 
-    void handleInput();
+    void acceptMessages() const;
+
+    void handleInput() const;
 
     void start();
 };
