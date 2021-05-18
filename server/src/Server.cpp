@@ -26,9 +26,11 @@ void Server::spawn() {
             exit(0);
         }
 
-        Server server;
-        server.acceptMessages();
-        server.~Server();
+        {
+            Server server;
+            server.acceptMessages();
+        }
+
         exit(0);
     }
 }
