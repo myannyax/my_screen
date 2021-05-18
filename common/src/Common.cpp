@@ -60,7 +60,7 @@ mqd_t createMessageQueue(const std::string& name, int mode) {
     attr.mq_curmsgs = 0;
 
     auto mq = mq_open(name.c_str(), O_CREAT | mode, 0644, &attr);
-    CHECK(mq != static_cast<mqd_t>(-1));
+    CHECK(mq != -1);
 
     return mq;
 }
@@ -68,18 +68,17 @@ mqd_t createMessageQueue(const std::string& name, int mode) {
 mqd_t getMessageQueue(const std::string& name, int mode, bool checkExists) {
     auto mq = mq_open(name.c_str(), mode);
     if (checkExists) {
-        CHECK(mq != static_cast<mqd_t>(-1));
+        CHECK(mq != -1);
     }
-
     return mq;
 }
 
 void closeMessageQueue(mqd_t mq) {
-    CHECK(mq_close(mq) != static_cast<mqd_t>(-1));
+    CHECK(mq_close(mq) != -1);
 }
 
 void deleteMessageQueue(const std::string& queueName) {
-    CHECK(mq_unlink(queueName.c_str()) != static_cast<mqd_t>(-1));
+    CHECK(mq_unlink(queueName.c_str()) != -1);
 }
 
 std::string sessionInputQueueName(const std::string& sessionId) {

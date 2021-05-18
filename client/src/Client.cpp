@@ -5,6 +5,23 @@
 #include "Client.h"
 #include "Server.h"
 
+namespace {
+    std::string SessionId;
+
+    void inputProcessSignalHandler(int) {
+        if (!SessionId.empty()) {
+            auto mq = getMessageQueue(sessionInputQueueName(SessionId), O_WRONLY, false);
+            if (mq != -1) {
+                sendCode(DETACH_CODE, mq);
+                closeMessageQueue(mq);
+            }
+        }
+        exit(0);
+    }
+    void clientSignalHandler(int) {
+    }
+}
+
 Client::Client() {
     serverQueue = getMessageQueue(SERVER_QUEUE, O_WRONLY, false);
 
@@ -108,9 +125,12 @@ void Client::start() {
     auto child = fork();
     if (child == 0) {
         doNotDestroy = true;
+        SessionId = sessionId;
+        signal(SIGINT, inputProcessSignalHandler);
         handleInput();
         return;
     }
+    signal(SIGINT, clientSignalHandler);
     inputPid = child;
     acceptMessages();
 }
@@ -156,7 +176,7 @@ void Client::handleInput() const {
 }
 
 bool Client::serverExists() const {
-    return serverQueue != static_cast<mqd_t>(-1);
+    return serverQueue != -1;
 }
 
 void Client::spawnServer() {

@@ -1,9 +1,15 @@
 #include <sstream>
 #include <unistd.h>
 #include <regex>
+#include <csignal>
 
 #include "Server.h"
 #include "Session.h"
+
+namespace {
+    void serverSignalHandler(int) {
+    }
+}
 
 void parseMessage(const std::string& data, std::string& sessionId, std::string& outputQueueName) {
     std::istringstream is{data};
@@ -13,6 +19,7 @@ void parseMessage(const std::string& data, std::string& sessionId, std::string& 
 
 Server::Server() {
     inputQueue = createMessageQueue(SERVER_QUEUE, O_RDONLY);
+    signal(SIGINT, serverSignalHandler);
 }
 
 void Server::spawn() {
@@ -20,8 +27,6 @@ void Server::spawn() {
     CHECK(spawner >= 0);
 
     if (spawner == 0) {
-        dup2(-1, STDIN_FILENO);
-
         auto daemon = fork();
         CHECK(daemon >= 0);
         if (daemon > 0) {
@@ -51,7 +56,7 @@ void Server::createNewSession(const std::string& id, const std::string& outputQu
     auto inputQueueName = sessionInputQueueName(sessionId);
     sessionQueues[sessionId] = createMessageQueue(inputQueueName, O_WRONLY);
 
-    sendMessage({SERVER_HELLO_CODE, sessionId}, getMessageQueue(outputQueueName, O_WRONLY));
+    sendMessage({SERVER_HELLO_CODE, sessionId}, outputQueueName);
 
     auto child = fork();
     if (child > 0) {
@@ -145,7 +150,7 @@ void Server::acceptMessages() {
 
 Server::~Server() {
     std::string tmpOutputQueueName = "/my_screen_tmp_output_queue";
-    auto tmpOutputQueue = createMessageQueue(tmpOutputQueueName, O_WRONLY);
+    auto tmpOutputQueue = createMessageQueue(tmpOutputQueueName, O_RDONLY);
 
     for (const auto& id : logic.getSessionIds()) {
         killSession(id, tmpOutputQueueName);
@@ -154,6 +159,8 @@ Server::~Server() {
         CHECK(message.code == SUCCESS_CODE);
         message = receiveMessage(inputQueue);
         CHECK(message.code == TERMINATED_CODE);
+
+        endSession(id);
     }
 
     closeMessageQueue(tmpOutputQueue);
