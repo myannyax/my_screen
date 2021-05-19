@@ -64,9 +64,16 @@ void Session::wait() {
 }
 
 void Session::attachClient(const std::string& outputQueueName) {
-    outputQueue = getMessageQueue(outputQueueName, O_WRONLY);
+    auto newOutputQueue = getMessageQueue(outputQueueName, O_WRONLY);
 
     activeSessionMutex.lock();
+    if (activeSession) {
+        sendMessage({FAILURE_CODE, "No more than one client can be attached to session"}, newOutputQueue);
+        closeMessageQueue(newOutputQueue);
+        activeSessionMutex.unlock();
+        return;
+    }
+    outputQueue = newOutputQueue;
     activeSession = true;
     sendMessage({SERVER_HELLO_CODE, sessionId}, outputQueue);
     for (const auto& msg : logic.getSessionBuffer()) {
