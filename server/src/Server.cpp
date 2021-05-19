@@ -20,6 +20,7 @@ void parseMessage(const std::string& data, std::string& sessionId, std::string& 
 Server::Server() {
     inputQueue = createMessageQueue(SERVER_QUEUE, O_RDONLY);
     signal(SIGINT, serverSignalHandler);
+    signal(SIGHUP, serverSignalHandler);
 }
 
 void Server::spawn() {

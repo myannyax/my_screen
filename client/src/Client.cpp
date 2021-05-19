@@ -127,10 +127,12 @@ void Client::start() {
         doNotDestroy = true;
         SessionId = sessionId;
         signal(SIGINT, inputProcessSignalHandler);
+        signal(SIGHUP, inputProcessSignalHandler);
         handleInput();
         return;
     }
     signal(SIGINT, clientSignalHandler);
+    signal(SIGHUP, clientSignalHandler);
     inputPid = child;
     acceptMessages();
 }
